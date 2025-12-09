@@ -57,7 +57,7 @@ export function FileItem({ id, file, pageRange, pageCount, scale, onUpdateRange,
                         step="0.1"
                         min="0.1"
                         title="Set image scale factor. 1 = Original Size, 0.5 = 50%, 2 = 200%."
-                        value={scale || 1}
+                        value={scale === undefined || scale === null ? 1 : scale}
                         onChange={(e) => onUpdateScale(id, e.target.value)}
                         className="glass-input"
                         onPointerDown={(e) => e.stopPropagation()}

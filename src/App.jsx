@@ -44,9 +44,12 @@ function App() {
   };
 
   const handleUpdateScale = (id, scale) => {
-    setFiles(prev => prev.map(f =>
-      f.id === id ? { ...f, scale: parseFloat(scale) } : f
-    ));
+    setFiles(prev => prev.map(f => {
+      if (f.id !== id) return f;
+      // limit to 3 decimal places to avoid long repeating decimals if any calculation occurs
+      // but allow empty string (user clearing input)
+      return { ...f, scale: scale === '' ? '' : scale };
+    }));
   };
 
   const handleDelete = (id) => {
@@ -76,7 +79,10 @@ function App() {
           }
 
           if (image) {
-            const scale = fileObj.scale || 1;
+            // handle case where scale might be empty string -> default to 1
+            const scaleVal = (fileObj.scale === '' || fileObj.scale === undefined || fileObj.scale === null) ? 1 : parseFloat(fileObj.scale);
+            const scale = isNaN(scaleVal) ? 1 : scaleVal;
+
             const { width, height } = image.scale(scale);
             const page = mergedPdf.addPage([width, height]);
             page.drawImage(image, {
