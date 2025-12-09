@@ -47,10 +47,10 @@ export function DropZone({ onFilesAdded }) {
                 onChange={handleFileInput}
                 style={{ display: 'none' }}
                 multiple
-                accept=".pdf"
+                accept=".pdf,.jpg,.jpeg,.png"
             />
             <UploadCloud size={48} className="highlight" />
-            <h3>Drop PDF files here</h3>
+            <h3>Drop PDF or Image files here</h3>
             <p>or click to browse</p>
         </div>
     );

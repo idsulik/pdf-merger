@@ -8,18 +8,44 @@ function App() {
   const [files, setFiles] = useState([]);
   const [isMerging, setIsMerging] = useState(false);
 
-  const handleFilesAdded = (newFiles) => {
-    const fileObjs = newFiles.map(f => ({
-      id: crypto.randomUUID(),
-      file: f,
-      pageRange: ''
-    }));
+  const handleFilesAdded = async (newFiles) => {
+    const fileObjs = [];
+
+    for (const f of newFiles) {
+      let pageCount = 0;
+      if (f.type === 'application/pdf') {
+        try {
+          const arrayBuffer = await f.arrayBuffer();
+          const pdf = await PDFDocument.load(arrayBuffer);
+          pageCount = pdf.getPageCount();
+        } catch (e) {
+          console.error("Failed to load PDF for counting pages", e);
+        }
+      } else if (f.type.startsWith('image/')) {
+        pageCount = 1;
+      }
+
+      fileObjs.push({
+        id: crypto.randomUUID(),
+        file: f,
+        pageRange: '',
+        pageCount: pageCount,
+        scale: 1
+      });
+    }
+
     setFiles(prev => [...prev, ...fileObjs]);
   };
 
   const handleUpdateRange = (id, range) => {
     setFiles(prev => prev.map(f =>
       f.id === id ? { ...f, pageRange: range } : f
+    ));
+  };
+
+  const handleUpdateScale = (id, scale) => {
+    setFiles(prev => prev.map(f =>
+      f.id === id ? { ...f, scale: parseFloat(scale) } : f
     ));
   };
 
@@ -36,42 +62,69 @@ function App() {
 
       for (const fileObj of files) {
         const arrayBuffer = await fileObj.file.arrayBuffer();
-        const pdf = await PDFDocument.load(arrayBuffer);
-        const pageCount = pdf.getPageCount();
-        let indices = [];
 
-        if (!fileObj.pageRange || fileObj.pageRange.trim() === '') {
-          // Default: all pages
-          indices = pdf.getPageIndices();
+        // Check if it's an image or PDF based on file type
+        const isImage = fileObj.file.type.startsWith('image/');
+
+        if (isImage) {
+          let image;
+          // Embed properly based on type
+          if (fileObj.file.type === 'image/jpeg' || fileObj.file.type === 'image/jpg') {
+            image = await mergedPdf.embedJpg(arrayBuffer);
+          } else if (fileObj.file.type === 'image/png') {
+            image = await mergedPdf.embedPng(arrayBuffer);
+          }
+
+          if (image) {
+            const scale = fileObj.scale || 1;
+            const { width, height } = image.scale(scale);
+            const page = mergedPdf.addPage([width, height]);
+            page.drawImage(image, {
+              x: 0,
+              y: 0,
+              width,
+              height,
+            });
+          }
         } else {
-          // Parse range
-          const parts = fileObj.pageRange.split(',').map(p => p.trim());
-          for (const part of parts) {
-            if (part.includes('-')) {
-              const [start, end] = part.split('-').map(n => parseInt(n));
-              if (!isNaN(start) && !isNaN(end)) {
-                // Convert 1-based to 0-based
-                const s = Math.max(0, start - 1);
-                const e = Math.min(pageCount - 1, end - 1);
-                for (let i = s; i <= e; i++) {
-                  if (!indices.includes(i)) indices.push(i);
+          // Assume PDF
+          const pdf = await PDFDocument.load(arrayBuffer);
+          const pageCount = pdf.getPageCount();
+          let indices = [];
+
+          if (!fileObj.pageRange || fileObj.pageRange.trim() === '') {
+            // Default: all pages
+            indices = pdf.getPageIndices();
+          } else {
+            // Parse range
+            const parts = fileObj.pageRange.split(',').map(p => p.trim());
+            for (const part of parts) {
+              if (part.includes('-')) {
+                const [start, end] = part.split('-').map(n => parseInt(n));
+                if (!isNaN(start) && !isNaN(end)) {
+                  // Convert 1-based to 0-based
+                  const s = Math.max(0, start - 1);
+                  const e = Math.min(pageCount - 1, end - 1);
+                  for (let i = s; i <= e; i++) {
+                    if (!indices.includes(i)) indices.push(i);
+                  }
                 }
-              }
-            } else {
-              const page = parseInt(part);
-              if (!isNaN(page)) {
-                // Convert 1-based to 0-based
-                const p = page - 1;
-                if (p >= 0 && p < pageCount && !indices.includes(p)) {
-                  indices.push(p);
+              } else {
+                const page = parseInt(part);
+                if (!isNaN(page)) {
+                  // Convert 1-based to 0-based
+                  const p = page - 1;
+                  if (p >= 0 && p < pageCount && !indices.includes(p)) {
+                    indices.push(p);
+                  }
                 }
               }
             }
           }
-        }
 
-        const copiedPages = await mergedPdf.copyPages(pdf, indices);
-        copiedPages.forEach((page) => mergedPdf.addPage(page));
+          const copiedPages = await mergedPdf.copyPages(pdf, indices);
+          copiedPages.forEach((page) => mergedPdf.addPage(page));
+        }
       }
 
       const pdfBytes = await mergedPdf.save();
@@ -113,6 +166,7 @@ function App() {
               setFiles={setFiles}
               onDelete={handleDelete}
               onUpdateRange={handleUpdateRange}
+              onUpdateScale={handleUpdateScale}
             />
 
             <div style={{ marginTop: '2rem' }}>

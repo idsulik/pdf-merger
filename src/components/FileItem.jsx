@@ -3,7 +3,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { FileText, Trash2, GripVertical, Split } from 'lucide-react';
 
-export function FileItem({ id, file, pageRange, onUpdateRange, onDelete }) {
+export function FileItem({ id, file, pageRange, pageCount, scale, onUpdateRange, onUpdateScale, onDelete }) {
     const {
         attributes,
         listeners,
@@ -27,6 +27,8 @@ export function FileItem({ id, file, pageRange, onUpdateRange, onDelete }) {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     };
 
+    const isImage = file.type.startsWith('image/');
+
     return (
         <div
             ref={setNodeRef}
@@ -40,30 +42,59 @@ export function FileItem({ id, file, pageRange, onUpdateRange, onDelete }) {
                 <FileText size={24} className="highlight" />
                 <div>
                     <div className="file-name" title={file.name}>{file.name}</div>
-                    <div className="file-size">{formatSize(file.size)}</div>
+                    <div className="file-meta" style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        <div className="file-size">{formatSize(file.size)}</div>
+                        {!isImage && <div className="file-pages">{pageCount ? `${pageCount} page${pageCount > 1 ? 's' : ''}` : 'Loading...'}</div>}
+                    </div>
                 </div>
             </div>
 
-            <div className="page-range-input" style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Split size={16} className="text-secondary" />
-                <input
-                    type="text"
-                    value={pageRange || ''}
-                    onChange={(e) => onUpdateRange(id, e.target.value)}
-                    placeholder="All pages (e.g. 1-5, 8)"
-                    className="glass-input"
-                    onPointerDown={(e) => e.stopPropagation()}
-                    style={{
-                        background: 'rgba(0, 0, 0, 0.2)',
-                        border: '1px solid var(--card-border)',
-                        padding: '0.5rem',
-                        borderRadius: '6px',
-                        color: 'var(--text-primary)',
-                        width: '140px',
-                        fontSize: '0.9rem'
-                    }}
-                />
-            </div>
+            {isImage ? (
+                <div className="scale-input" style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }} title="Scale the image in the final PDF">Scale:</span>
+                    <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        title="Set image scale factor. 1 = Original Size, 0.5 = 50%, 2 = 200%."
+                        value={scale || 1}
+                        onChange={(e) => onUpdateScale(id, e.target.value)}
+                        className="glass-input"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'rgba(0, 0, 0, 0.2)',
+                            border: '1px solid var(--card-border)',
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            color: 'var(--text-primary)',
+                            width: '80px',
+                            fontSize: '0.9rem'
+                        }}
+                    />
+                </div>
+            ) : (
+                <div className="page-range-input" style={{ marginRight: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Split size={16} className="text-secondary" title="Select pages to include" />
+                    <input
+                        type="text"
+                        value={pageRange || ''}
+                        onChange={(e) => onUpdateRange(id, e.target.value)}
+                        placeholder="All pages (e.g. 1-5, 8)"
+                        title="Specify page ranges (e.g. '1-5, 8'). Leave blank for all pages."
+                        className="glass-input"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        style={{
+                            background: 'rgba(0, 0, 0, 0.2)',
+                            border: '1px solid var(--card-border)',
+                            padding: '0.5rem',
+                            borderRadius: '6px',
+                            color: 'var(--text-primary)',
+                            width: '140px',
+                            fontSize: '0.9rem'
+                        }}
+                    />
+                </div>
+            )}
 
             <button
                 className="btn-icon"
