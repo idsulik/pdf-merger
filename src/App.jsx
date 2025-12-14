@@ -294,7 +294,7 @@ function App() {
       URL.revokeObjectURL(url);
     } catch (error) {
       console.error('Error merging PDFs:', error);
-      alert('Failed to merge PDFs. Please ensure all files are valid PDFs.');
+      alert('Failed to merge files. Please ensure all files are valid PDFs or Images.');
     } finally {
       setIsMerging(false);
     }
@@ -307,7 +307,7 @@ function App() {
           <Files size={48} className="highlight" />
           <h1 className="title">PDF Merger</h1>
         </div>
-        <p className="subtitle">Merge multiple PDF files into one. Fast, secure, and client-side.</p>
+        <p className="subtitle">Merge multiple files (PDFs or Images) into one PDF. Fast, secure, and client-side.</p>
       </header>
 
       <main>
