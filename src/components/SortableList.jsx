@@ -15,7 +15,7 @@ import {
 } from '@dnd-kit/sortable';
 import { FileItem } from './FileItem';
 
-export function SortableList({ files, setFiles, onDelete, onUpdateRange, onUpdateScale }) {
+export function SortableList({ files, setFiles, onDelete, onUpdateRange, onUpdateScale, onUpdateRotation, onDuplicate }) {
     const sensors = useSensors(
         useSensor(PointerSensor),
         useSensor(KeyboardSensor, {
@@ -54,8 +54,11 @@ export function SortableList({ files, setFiles, onDelete, onUpdateRange, onUpdat
                             pageRange={fileObj.pageRange}
                             pageCount={fileObj.pageCount}
                             scale={fileObj.scale}
+                            rotation={fileObj.rotation}
                             onUpdateRange={onUpdateRange}
                             onUpdateScale={onUpdateScale}
+                            onUpdateRotation={onUpdateRotation}
+                            onDuplicate={onDuplicate}
                             onDelete={onDelete}
                         />
                     ))}

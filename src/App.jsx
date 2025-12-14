@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { PDFDocument } from 'pdf-lib';
+import { PDFDocument, degrees } from 'pdf-lib';
 import { DropZone } from './components/DropZone';
 import { SortableList } from './components/SortableList';
 import { Files, Download } from 'lucide-react';
@@ -7,6 +7,7 @@ import { Files, Download } from 'lucide-react';
 function App() {
   const [files, setFiles] = useState([]);
   const [isMerging, setIsMerging] = useState(false);
+  const [outputFilename, setOutputFilename] = useState('merged');
 
   const handleFilesAdded = async (newFiles) => {
     const fileObjs = [];
@@ -30,7 +31,8 @@ function App() {
         file: f,
         pageRange: '',
         pageCount: pageCount,
-        scale: 1
+        scale: 1,
+        rotation: 0 // 0, 90, 180, 270
       });
     }
 
@@ -50,6 +52,32 @@ function App() {
       // but allow empty string (user clearing input)
       return { ...f, scale: scale === '' ? '' : scale };
     }));
+  };
+
+  const handleUpdateRotation = (id) => {
+    setFiles(prev => prev.map(f => {
+      if (f.id !== id) return f;
+      const nextRotation = (f.rotation + 90) % 360;
+      return { ...f, rotation: nextRotation };
+    }));
+  };
+
+  const handleDuplicate = (id) => {
+    const fileToDuplicate = files.find(f => f.id === id);
+    if (!fileToDuplicate) return;
+
+    const newFile = {
+      ...fileToDuplicate,
+      id: crypto.randomUUID(),
+      // We keep the same file reference, pageRange, etc.
+    };
+
+    setFiles(prev => {
+      const index = prev.findIndex(f => f.id === id);
+      const newFiles = [...prev];
+      newFiles.splice(index + 1, 0, newFile);
+      return newFiles;
+    });
   };
 
   const handleDelete = (id) => {
@@ -91,6 +119,9 @@ function App() {
               width,
               height,
             });
+            if (fileObj.rotation) {
+              page.setRotation(degrees(fileObj.rotation));
+            }
           }
         } else {
           // Assume PDF
@@ -129,7 +160,12 @@ function App() {
           }
 
           const copiedPages = await mergedPdf.copyPages(pdf, indices);
-          copiedPages.forEach((page) => mergedPdf.addPage(page));
+          copiedPages.forEach((page) => {
+            if (fileObj.rotation) {
+              page.setRotation(degrees((page.getRotation().angle + fileObj.rotation) % 360));
+            }
+            mergedPdf.addPage(page)
+          });
         }
       }
 
@@ -139,7 +175,7 @@ function App() {
 
       const link = document.createElement('a');
       link.href = url;
-      link.download = 'merged.pdf';
+      link.download = `${outputFilename || 'merged'}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -173,9 +209,32 @@ function App() {
               onDelete={handleDelete}
               onUpdateRange={handleUpdateRange}
               onUpdateScale={handleUpdateScale}
+              onUpdateRotation={handleUpdateRotation}
+              onDuplicate={handleDuplicate}
             />
 
-            <div style={{ marginTop: '2rem' }}>
+            <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ color: 'var(--text-secondary)' }}>Filename:</span>
+                <input
+                  type="text"
+                  value={outputFilename}
+                  onChange={(e) => setOutputFilename(e.target.value)}
+                  placeholder="merged"
+                  className="glass-input"
+                  style={{
+                    background: 'rgba(0, 0, 0, 0.2)',
+                    border: '1px solid var(--card-border)',
+                    padding: '0.5rem',
+                    borderRadius: '6px',
+                    color: 'var(--text-primary)',
+                    width: '200px',
+                    fontSize: '1rem'
+                  }}
+                />
+                <span style={{ color: 'var(--text-secondary)' }}>.pdf</span>
+              </div>
+
               <button
                 className="btn"
                 onClick={handleMerge}
