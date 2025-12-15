@@ -4,6 +4,7 @@ import { DropZone } from './components/DropZone';
 import { SortableList } from './components/SortableList';
 import { Files, Download, Github } from 'lucide-react';
 import { MetadataOptions } from './components/MetadataOptions';
+import { parsePageRange } from './utils/pdfUtils';
 
 function App() {
   const [files, setFiles] = useState([]);
@@ -141,30 +142,7 @@ function App() {
             // Default: all pages
             indices = pdf.getPageIndices();
           } else {
-            // Parse range
-            const parts = fileObj.pageRange.split(',').map(p => p.trim());
-            for (const part of parts) {
-              if (part.includes('-')) {
-                const [start, end] = part.split('-').map(n => parseInt(n));
-                if (!isNaN(start) && !isNaN(end)) {
-                  // Convert 1-based to 0-based
-                  const s = Math.max(0, start - 1);
-                  const e = Math.min(pageCount - 1, end - 1);
-                  for (let i = s; i <= e; i++) {
-                    if (!indices.includes(i)) indices.push(i);
-                  }
-                }
-              } else {
-                const page = parseInt(part);
-                if (!isNaN(page)) {
-                  // Convert 1-based to 0-based
-                  const p = page - 1;
-                  if (p >= 0 && p < pageCount && !indices.includes(p)) {
-                    indices.push(p);
-                  }
-                }
-              }
-            }
+            indices = parsePageRange(fileObj.pageRange, pageCount);
           }
 
           const copiedPages = await mergedPdf.copyPages(pdf, indices);
