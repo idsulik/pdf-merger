@@ -15,10 +15,10 @@ import {
     useSortable
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { X, Plus } from 'lucide-react';
+import { X, Plus, ZoomIn } from 'lucide-react';
 import { parsePageRange, formatPageList } from '../utils/pdfUtils';
 
-export function PageGrid({ pageCount, pageRange, onUpdateRange }) {
+export function PageGrid({ pageCount, pageRange, onUpdateRange, onPreview }) {
     const [removalHistory, setRemovalHistory] = useState({});
 
     const sensors = useSensors(
@@ -105,6 +105,7 @@ export function PageGrid({ pageCount, pageRange, onUpdateRange }) {
                                 id={`page-${pageIndex}`}
                                 pageNumber={pageIndex + 1}
                                 onRemove={() => handleRemove(pageIndex)}
+                                onPreview={() => onPreview(pageIndex + 1)}
                             />
                         ))}
                     </div>
@@ -132,7 +133,25 @@ export function PageGrid({ pageCount, pageRange, onUpdateRange }) {
                                 title="Click to add"
                             >
                                 <span>{pageIndex + 1}</span>
-                                <Plus size={16} style={{ color: 'var(--accent-color)' }} />
+                                <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onPreview(pageIndex + 1);
+                                        }}
+                                        title="Preview page"
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            padding: 0,
+                                            cursor: 'pointer',
+                                            color: 'var(--text-secondary)'
+                                        }}
+                                    >
+                                        <ZoomIn size={14} />
+                                    </button>
+                                    <Plus size={16} style={{ color: 'var(--accent-color)' }} />
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -160,7 +179,7 @@ const pageItemStyle = {
     gap: '2px'
 };
 
-function SortablePageItem({ id, pageNumber, onRemove }) {
+export function SortablePageItem({ id, pageNumber, onRemove, onPreview }) {
     const {
         attributes,
         listeners,
@@ -193,6 +212,7 @@ function SortablePageItem({ id, pageNumber, onRemove }) {
                     e.stopPropagation();
                     onRemove();
                 }}
+                title="Remove page"
                 style={{
                     position: 'absolute',
                     top: '-5px',
@@ -207,10 +227,32 @@ function SortablePageItem({ id, pageNumber, onRemove }) {
                     justifyContent: 'center',
                     border: 'none',
                     cursor: 'pointer',
-                    padding: 0
+                    padding: 0,
+                    zIndex: 2
                 }}
             >
                 <X size={10} />
+            </button>
+            <button
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    onPreview();
+                }}
+                title="Preview page"
+                style={{
+                    position: 'absolute',
+                    bottom: '2px',
+                    right: '2px',
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    padding: 0,
+                    opacity: 0.6
+                }}
+            >
+                <ZoomIn size={12} />
             </button>
         </div>
     );

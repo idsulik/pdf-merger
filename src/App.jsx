@@ -4,6 +4,7 @@ import { DropZone } from './components/DropZone';
 import { SortableList } from './components/SortableList';
 import { Files, Download, Github } from 'lucide-react';
 import { MetadataOptions } from './components/MetadataOptions';
+import { PreviewModal } from './components/PreviewModal';
 import { parsePageRange } from './utils/pdfUtils';
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
   const [isMetadataOpen, setIsMetadataOpen] = useState(false);
   const [blankPageOption, setBlankPageOption] = useState('none'); // 'none', 'always', 'odd', 'specific'
   const [specificBlankPages, setSpecificBlankPages] = useState('');
+  const [previewData, setPreviewData] = useState(null); // { file, page }
 
   const handleFilesAdded = async (newFiles) => {
     const fileObjs = [];
@@ -91,6 +93,10 @@ function App() {
 
   const handleDelete = (id) => {
     setFiles(prev => prev.filter(f => f.id !== id));
+  };
+
+  const handlePreview = (file, page = null) => {
+    setPreviewData({ file, page });
   };
 
   const handleMerge = async () => {
@@ -301,6 +307,7 @@ function App() {
               onUpdateScale={handleUpdateScale}
               onUpdateRotation={handleUpdateRotation}
               onDuplicate={handleDuplicate}
+              onPreview={handlePreview}
             />
 
             <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', width: '100%', maxWidth: '600px', margin: '2rem auto' }}>
@@ -342,6 +349,11 @@ function App() {
             </div>
           </>
         )}
+        <PreviewModal
+          file={previewData?.file}
+          page={previewData?.page}
+          onClose={() => setPreviewData(null)}
+        />
       </main>
 
       <footer style={{ marginTop: '4rem', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>

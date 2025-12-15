@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { FileText, Trash2, GripVertical, Split, RotateCw, Copy, ChevronDown, ChevronUp } from 'lucide-react';
+import { ZoomIn, Trash2, GripVertical, Split, RotateCw, Copy, ChevronDown, ChevronUp } from 'lucide-react';
 import { PageGrid } from './PageGrid';
 
-export function FileItem({ id, file, pageRange, pageCount, scale, rotation, onUpdateRange, onUpdateScale, onUpdateRotation, onDuplicate, onDelete }) {
+export function FileItem({ id, file, pageRange, pageCount, scale, rotation, onUpdateRange, onUpdateScale, onUpdateRotation, onDuplicate, onDelete, onPreview }) {
     const [isExpanded, setIsExpanded] = useState(false);
 
     const {
@@ -47,7 +47,14 @@ export function FileItem({ id, file, pageRange, pageCount, scale, rotation, onUp
                     <GripVertical size={20} />
                 </div>
                 <div className="file-info">
-                    <FileText size={24} className="highlight" />
+                    <button
+                        className="btn-icon"
+                        onClick={() => onPreview()}
+                        title="Preview file content"
+                        style={{ padding: '0.25rem', marginRight: '0.5rem' }}
+                    >
+                        <ZoomIn size={24} className="highlight" />
+                    </button>
                     <div>
                         <div className="file-name" title={file.name}>{file.name}</div>
                         <div className="file-meta" style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
@@ -149,6 +156,7 @@ export function FileItem({ id, file, pageRange, pageCount, scale, rotation, onUp
                         pageCount={pageCount}
                         pageRange={pageRange}
                         onUpdateRange={(newRange) => onUpdateRange(id, newRange)}
+                        onPreview={onPreview}
                     />
                 </div>
             )}
